@@ -1,0 +1,36 @@
+# Nunca copiar segredo nem artefato local para a imagem
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+.github
+.venv
+venv
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Dados e artefatos de análise
+*.csv
+*.xlsx
+*.pdf
+*.log
+logs/
+tmp/
+backup/
+sql/
+
+# Editores e sistema
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Documentação local
+README.md
+docs/

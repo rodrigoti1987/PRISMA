@@ -1,8 +1,64 @@
+# ============================================================
+# SEGREDOS — nunca versionar
+# ============================================================
 .env
-.env.*
+.env.local
+.env.*.local
 !.env.example
+*.pem
+*.key
+*.p12
+*.jks
+wallet/
+tnsnames.ora
+sqlnet.ora
+
+# ============================================================
+# Python
+# ============================================================
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
 .venv/
 venv/
+ENV/
+env/
+.python-version
+
+# Ferramentas
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.bandit
+
+# ============================================================
+# Dados e saídas — dado assistencial não entra em repositório
+# ============================================================
+*.csv
+*.xlsx
+*.xls
+*.pdf
+*.log
+logs/
+tmp/
+backup/
+exports/
+sql/
+
+# ============================================================
+# Editores e sistema
+# ============================================================
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
