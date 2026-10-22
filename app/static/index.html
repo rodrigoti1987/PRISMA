@@ -1,0 +1,1504 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bussola prisma — Ciência de Dados em Saúde</title>
+<style>
+:root{
+  --bg:#0e1218; --bg2:#141a22; --bg3:#1b232e;
+  --line:#26303d; --txt:#e6ecf3; --dim:#8fa0b5;
+  --accent:#22d3ee; --ok:#22c55e; --warn:#f5a524; --crit:#ef4444;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:var(--bg); color:var(--txt);
+  font:14px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.shell{display:flex;min-height:100vh}
+/* ---------------- sidebar ---------------- */
+.sidebar{
+  width:238px;flex:0 0 238px;background:var(--bg2);
+  border-right:1px solid var(--line);padding:18px 12px;
+  display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
+.brand-mark{width:26px;height:26px;flex:0 0 26px}
+.brand-txt{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.brand-txt b{display:block;color:var(--txt);letter-spacing:.1em;font-weight:600}
+
+.nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:10px 12px;border-radius:8px;color:var(--dim);
+  border-left:2px solid transparent;text-align:left;
+}
+.nav-item:hover{background:var(--bg3);color:var(--txt)}
+.nav-item.active{background:var(--bg3);color:var(--txt);border-left-color:var(--accent);font-weight:600}
+.nav-item svg{width:16px;height:16px;flex:0 0 16px;opacity:.9}
+.badge{
+  margin-left:auto;min-width:20px;padding:1px 6px;border-radius:9px;
+  background:var(--crit);color:#fff;font-size:11px;font-weight:700;text-align:center;
+}
+.badge[hidden]{display:none}
+.sidebar-foot{margin-top:auto;padding:10px 10px 0;color:var(--dim);font-size:11px;line-height:1.5;border-top:1px solid var(--line)}
+
+/* ---------------- main ---------------- */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+header.top{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:14px 22px;border-bottom:1px solid var(--line);
+  background:rgba(20,26,34,.9);backdrop-filter:blur(8px);
+  position:sticky;top:0;z-index:20;
+}
+.top h1{margin:0;font-size:15px;font-weight:600;letter-spacing:.01em}
+.top .sub{margin:2px 0 0;font-size:12px;color:var(--dim)}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill{
+  display:inline-flex;align-items:center;gap:7px;padding:5px 11px;
+  border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--dim);
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.dot.ok{background:var(--ok)} .dot.err{background:var(--crit)}
+.icon-btn{
+  width:34px;height:34px;display:grid;place-items:center;border-radius:8px;
+  border:1px solid var(--line);color:var(--dim);
+}
+.icon-btn:hover{color:var(--txt);border-color:var(--accent)}
+.icon-btn svg{width:16px;height:16px}
+.icon-btn.on{color:var(--accent);border-color:var(--accent)}
+
+main.content{padding:20px 22px 32px;flex:1}
+section[hidden]{display:none}
+
+/* aviso de áudio */
+.audio-hint{
+  display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;
+  border:1px dashed var(--warn);border-radius:var(--radius);
+  background:rgba(245,165,36,.07);color:var(--warn);font-size:13px;
+}
+.audio-hint[hidden]{display:none}
+
+/* banner crítico */
+.banner{
+  display:none;align-items:center;gap:10px;margin-bottom:16px;padding:12px 16px;
+  border-radius:var(--radius);background:rgba(239,68,68,.14);
+  border:1px solid var(--crit);color:#fecaca;font-weight:600;
+}
+.banner.show{display:flex;animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+/* abas sintético/analítico */
+.tabs{display:inline-flex;padding:4px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:18px}
+.tab{padding:8px 20px;border-radius:7px;color:var(--dim);font-size:13px;font-weight:600;letter-spacing:.02em}
+.tab.active{background:var(--accent);color:#05141a}
+
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.kpi .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.kpi .val{font-size:23px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.kpi .val small{font-size:12px;font-weight:500;color:var(--dim);margin-left:4px}
+.kpi .delta{font-size:12px;margin-top:4px;display:flex;align-items:center;gap:5px}
+.kpi .delta.up{color:var(--crit)} .kpi .delta.down{color:var(--ok)} .kpi .delta.flat{color:var(--dim)}
+.kpi svg.spark{display:block;width:100%;height:26px;margin-top:8px}
+
+/* cards genéricos */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:18px}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+.card h3{margin:0 0 12px;font-size:13px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--dim)}
+
+/* status sistemas */
+.sys{display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.sys:last-child{border-bottom:0}
+.sys .lamp{width:10px;height:10px;border-radius:50%;margin-top:5px;flex:0 0 10px}
+.lamp.ok{background:var(--ok);box-shadow:0 0 8px rgba(34,197,94,.6)}
+.lamp.warn{background:var(--warn);box-shadow:0 0 8px rgba(245,165,36,.6)}
+.lamp.crit{background:var(--crit);box-shadow:0 0 8px rgba(239,68,68,.6)}
+.sys h4{margin:0;font-size:14px;font-weight:600}
+.sys p{margin:3px 0 0;font-size:12px;color:var(--dim)}
+
+/* tabela */
+.filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}
+.filters input,.filters select{
+  background:var(--bg2);border:1px solid var(--line);border-radius:8px;
+  padding:8px 11px;font-size:13px;min-width:130px;
+}
+.filters input{min-width:210px}
+.btn{
+  padding:8px 14px;border-radius:8px;border:1px solid var(--line);
+  background:var(--bg3);font-size:13px;color:var(--txt);
+}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#05141a;border-color:var(--accent);font-weight:600}
+.count{font-size:12px;color:var(--dim);margin-bottom:10px}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:var(--radius);max-height:60vh}
+table{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}
+thead th{
+  position:sticky;top:0;z-index:2;background:var(--bg3);
+  padding:10px 12px;text-align:left;font-size:11px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line);
+}
+thead th.sortable{cursor:pointer;user-select:none}
+thead th.sortable:hover{color:var(--accent)}
+tbody td{padding:9px 12px;border-bottom:1px solid rgba(38,48,61,.55)}
+tbody tr:hover{background:rgba(34,211,238,.05);cursor:pointer}
+tbody tr.erro{background:rgba(239,68,68,.08)}
+tbody tr.alto{background:rgba(239,68,68,.08)}
+.crit-txt{color:var(--crit);font-weight:600}
+.warn-txt{color:var(--warn);font-weight:600}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600}
+.chip.ok{background:rgba(34,197,94,.16);color:var(--ok)}
+.chip.err{background:rgba(239,68,68,.16);color:var(--crit)}
+.chip.warn{background:rgba(245,165,36,.16);color:var(--warn)}
+
+/* alertas */
+.alert-list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto}
+.alert{display:flex;gap:11px;align-items:flex-start;padding:11px 12px;border-radius:8px;background:var(--bg3);border-left:3px solid var(--dim)}
+.alert.CRITICO{border-left-color:var(--crit)}
+.alert.ATENCAO{border-left-color:var(--warn)}
+.alert.INFO{border-left-color:var(--accent)}
+.alert b{font-size:13px;display:block}
+.alert span{font-size:11.5px;color:var(--dim);display:block;margin-top:2px}
+.alert button{margin-left:auto;font-size:11px;color:var(--accent);white-space:nowrap}
+
+/* charts */
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar-row{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
+.bar-row .name{font-size:12px;color:var(--dim)}
+.bar-row .num{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.bar-track{grid-column:1/-1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:var(--accent)}
+.bar-fill.warn{background:var(--warn)} .bar-fill.crit{background:var(--crit)} .bar-fill.ok{background:var(--ok)}
+svg.chart{display:block;width:100%;height:170px}
+
+/* configurações */
+.form{display:flex;flex-direction:column;gap:14px;max-width:640px}
+.field label{display:block;font-size:12px;color:var(--dim);margin-bottom:5px}
+.field input{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px}
+details.doc summary{cursor:pointer;color:var(--accent);font-size:13px;padding:8px 0}
+pre.doc{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:11.5px;overflow:auto;color:var(--dim);line-height:1.55}
+.console{background:#05080b;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-family:ui-monospace,monospace;font-size:11.5px;height:132px;overflow:auto;color:#7f8f9f}
+.console .e{color:var(--crit)}
+
+/* drawer */
+.drawer-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:60}
+.drawer-bg.open{display:block}
+.drawer{
+  position:fixed;top:0;right:0;width:min(430px,92vw);height:100vh;z-index:61;
+  background:var(--bg2);border-left:1px solid var(--line);padding:20px;
+  overflow:auto;transform:translateX(100%);transition:transform .22s ease;
+}
+.drawer.open{transform:none}
+.drawer h2{margin:0 0 4px;font-size:15px}
+.drawer .close{position:absolute;top:16px;right:16px}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.66);display:none;place-items:center;z-index:70;padding:20px}
+.modal-bg.open{display:grid}
+.modal{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:22px;width:min(760px,100%);max-height:86vh;overflow:auto}
+.modal h2{margin:0 0 14px;font-size:16px}
+.modal pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:11.5px;overflow:auto;max-height:380px}
+
+footer.foot{padding:14px 22px;border-top:1px solid var(--line);color:var(--dim);font-size:11.5px;display:flex;gap:14px;flex-wrap:wrap}
+
+/* responsivo */
+.menu-btn{display:none}
+@media(max-width:900px){
+  .sidebar{position:fixed;left:0;top:0;z-index:55;transform:translateX(-100%);transition:transform .2s}
+  .sidebar.open{transform:none}
+  .menu-btn{display:grid}
+  main.content{padding:16px}
+  header.top{padding:12px 16px}
+  .top h1{font-size:14px}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.25">
+        <path d="M20 3a17 17 0 0 1 0 34M20 3a17 17 0 0 0 0 34" opacity=".9"/>
+        <path d="M20 20 28 12" stroke="#22d3ee"/>
+        <circle cx="29.5" cy="10.5" r="1.6" fill="#22d3ee" stroke="none"/>
+        <circle cx="33" cy="7" r="1.3" fill="#22d3ee" stroke="none"/>
+      </svg>
+      <div class="brand-txt"><b>bussola prisma</b>CIÊNCIA DE DADOS</div>
+    </div>
+
+    <button class="nav-item active" data-sec="integracoes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0V8ZM12 16v6"/></svg>
+      Integrações <span class="badge" id="badge-int" hidden>0</span>
+    </button>
+    <button class="nav-item" data-sec="pacientes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M17 11.5a3 3 0 1 0 0-6M22 20a5.6 5.6 0 0 0-4-5.4"/></svg>
+      Pacientes <span class="badge" id="badge-pac" hidden>0</span>
+    </button>
+    <button class="nav-item" data-sec="config">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.5-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.6a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4Z"/></svg>
+      Configurações
+    </button>
+    <button class="nav-item" data-sec="metodologia">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7"/></svg>
+      Metodologia
+    </button>
+
+    <div class="sidebar-foot">
+      Dados de demonstração.<br>Nomes mascarados · LGPD
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div>
+        <h1 id="titulo">Integrações e Sistemas Hospitalares</h1>
+        <p class="sub" id="subtitulo">MV Soul · PACS/RIS · Oracle · HL7/FHIR</p>
+      </div>
+      <div class="top-right">
+        <span class="pill"><span class="dot" id="statusDot"></span><span id="statusTxt">Demo</span></span>
+        <span class="pill" id="relogio">--:--:--</span>
+        <button class="icon-btn on" id="somBtn" title="Som de alertas" aria-label="Alternar som">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>
+        </button>
+        <button class="icon-btn" id="cfgBtn" title="Configurações" aria-label="Configurações">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9 2 2 0 1 1-2.8 2.8 1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2 2 2 0 1 1-2.8-2.8A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.5-2.9 2 2 0 1 1 2.8-2.8A1.7 1.7 0 0 0 10 4.6a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2 2 2 0 1 1 2.8 2.8A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <div class="audio-hint" id="audioHint">
+        Clique em qualquer lugar da página para ativar os alertas sonoros (exigência dos navegadores).
+      </div>
+      <div class="banner" id="banner"><span id="bannerTxt"></span></div>
+
+      <!-- ================= INTEGRAÇÕES ================= -->
+      <section id="sec-integracoes">
+        <div class="tabs" data-mod="integracoes">
+          <button class="tab active" data-mode="sintetico">Sintético</button>
+          <button class="tab" data-mode="analitico">Analítico</button>
+        </div>
+
+        <div id="int-sintetico">
+          <div class="kpis" id="intKpis"></div>
+          <div class="grid2">
+            <div class="card"><h3>Status por sistema</h3><div id="intSistemas"></div></div>
+            <div class="card"><h3>Alertas ativos</h3><div class="alert-list" id="intAlertas"></div></div>
+          </div>
+          <div class="grid2">
+            <div class="card"><h3>Mensagens por hora (12h)</h3><div id="intChartHl7"></div></div>
+            <div class="card"><h3>Latência média vs. meta 1.000 ms</h3><div id="intChartLat"></div></div>
+          </div>
+          <div class="card"><h3>Estudos PACS por modalidade</h3><div id="intChartPacs"></div></div>
+        </div>
+
+        <div id="int-analitico" hidden>
+          <div class="filters">
+            <input id="fBuscaInt" placeholder="Buscar ID da mensagem ou paciente">
+            <select id="fSistemaInt">
+              <option value="TODOS">Todos os sistemas</option>
+              <option>MV Soul</option><option>PACS/RIS</option><option>Oracle</option><option>HL7/FHIR</option>
+            </select>
+            <select id="fStatusInt">
+              <option value="TODOS">Todos os status</option>
+              <option>SUCESSO</option><option>ERRO</option><option>PENDENTE</option>
+            </select>
+            <button class="btn" id="limparInt">Limpar</button>
+            <button class="btn primary" id="csvInt">Exportar CSV</button>
+          </div>
+          <div class="count" id="countInt"></div>
+          <div class="tw">
+            <table id="tblInt">
+              <thead><tr>
+                <th class="sortable" data-sort="horario">Horário</th>
+                <th>Origem</th><th>Destino</th><th>Tipo</th><th>ID</th>
+                <th>Paciente</th><th>Unidade</th>
+                <th class="sortable" data-sort="status">Status</th>
+                <th class="sortable" data-sort="latencia">Latência</th>
+                <th>Detalhe</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PACIENTES ================= -->
+      <section id="sec-pacientes" hidden>
+        <div class="tabs" data-mod="pacientes">
+          <button class="tab active" data-mode="sintetico">Sintético</button>
+          <button class="tab" data-mode="analitico">Analítico</button>
+        </div>
+
+        <div id="pac-sintetico">
+          <div class="kpis" id="pacKpis"></div>
+          <div class="grid2">
+            <div class="card"><h3>Permanência por faixa de desvio</h3><div id="pacFaixas"></div></div>
+            <div class="card"><h3>Observado vs. esperado (8 meses)</h3><div id="pacSerie"></div></div>
+          </div>
+          <div class="grid2">
+            <div class="card"><h3>Perfil epidemiológico — capítulo CID-10</h3><div id="pacCapitulos"></div></div>
+            <div class="card"><h3>Faixa etária</h3><div id="pacIdades"></div></div>
+          </div>
+          <div class="grid2">
+            <div class="card"><h3>Distribuição por risco</h3><div id="pacRisco"></div></div>
+            <div class="card"><h3>Fatores de risco prevalentes</h3><div id="pacFatores"></div></div>
+          </div>
+          <div class="card"><h3>Pacientes de maior risco</h3><div class="alert-list" id="pacTop"></div></div>
+        </div>
+
+        <div id="pac-analitico" hidden>
+          <div class="filters">
+            <input id="fBuscaPac" placeholder="Buscar iniciais, prontuário ou CID">
+            <select id="fUnidadePac">
+              <option value="TODA">Todas as unidades</option>
+              <option>CER</option><option>Mariska</option><option>Paulino</option><option>Ambulatório</option>
+            </select>
+            <select id="fRiscoPac">
+              <option value="TODOS">Todos os riscos</option>
+              <option>ALTO</option><option>MEDIO</option><option>BAIXO</option>
+            </select>
+            <select id="fSitPac">
+              <option value="TODAS">Permanência: todas</option>
+              <option value="ACIMA">Acima do esperado</option>
+              <option value="DENTRO">Dentro do esperado</option>
+            </select>
+            <button class="btn" id="limparPac">Limpar</button>
+            <button class="btn primary" id="csvPac">Exportar CSV</button>
+          </div>
+          <div class="count" id="countPac"></div>
+          <div class="tw">
+            <table id="tblPac">
+              <thead><tr>
+                <th class="sortable" data-sort="prontuario">Prontuário</th>
+                <th>Paciente</th>
+                <th class="sortable" data-sort="idade">Idade</th>
+                <th>Sexo</th><th>Unidade</th>
+                <th>Internação</th>
+                <th class="sortable" data-sort="permanencia">Dias</th>
+                <th>Esperado</th>
+                <th class="sortable" data-sort="desvio">Desvio</th>
+                <th>CID</th><th>Capítulo</th><th>Comorb.</th>
+                <th class="sortable" data-sort="score">Score</th>
+                <th>Risco</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= CONFIGURAÇÕES ================= -->
+      <section id="sec-config" hidden>
+        <div class="card">
+          <h3>Conexão com a API intermediária</h3>
+          <div class="form">
+            <div class="field"><label>URL base da API</label>
+              <input id="cBase" placeholder="https://minha-api.interno/api"></div>
+            <div class="field"><label>Token (Bearer)</label>
+              <input id="cToken" type="password" placeholder="cole o API_TOKEN aqui"></div>
+            <div class="field"><label>Intervalo de atualização (segundos)</label>
+              <input id="cInt" type="number" min="10" max="600" value="60"></div>
+            <div style="display:flex;gap:9px;flex-wrap:wrap">
+              <button class="btn" id="testarApi">Testar conexão</button>
+              <button class="btn primary" id="salvarCfg">Salvar</button>
+              <button class="btn" id="voltarDemo">Voltar para demonstração</button>
+            </div>
+            <div class="console" id="consoleCfg"></div>
+
+            <details class="doc">
+              <summary>Contrato esperado da API</summary>
+              <pre class="doc">GET /integracoes/sintetico
+{ "geradoEm":"...", "kpis":[...], "sistemas":[...],
+  "series":{ "porHora":[...], "pacsPorModalidade":[...] } }
+
+GET /integracoes/analitico?page=1&amp;size=50
+{ "total":1284, "registros":[ { "horario":"...", "sistema_origem":"MV Soul",
+  "status":"SUCESSO", "latencia_ms":480, ... } ] }
+
+GET /pacientes/sintetico?dias=30
+{ "kpis":{...}, "permanencia":{...}, "epidemiologia":{...}, "risco":{...} }
+
+GET /pacientes/analitico?page=1&amp;size=50
+{ "total":256, "registros":[ { "iniciais":"M. A. S.", "desvio":18, ... } ] }
+
+GET /integracoes/alertas  ·  GET /pacientes/alertas
+{ "alertas":[ { "id":1, "severidade":"CRITICO", ... } ] }
+
+Variáveis de ambiente esperadas na API:
+ORACLE_USER · ORACLE_PASSWORD · ORACLE_DSN
+API_TOKEN · CACHE_TTL_SECONDS · PORT</pre>
+            </details>
+            <p style="font-size:12px;color:var(--dim);line-height:1.6">
+              A API intermediária é a responsável por consultar o Oracle. Esta página
+              nunca acessa o banco diretamente — ela apenas consome os endpoints acima.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= METODOLOGIA ================= -->
+      <section id="sec-metodologia" hidden>
+        <div class="card" style="max-width:860px">
+          <h3>Como os indicadores são calculados</h3>
+          <div style="font-size:13.5px;line-height:1.75;color:#cfd8e3">
+            <p><b>Permanência esperada.</b> Benchmark interno por CID principal e
+            faixa etária — não a média bruta da unidade. Comparar um paciente com
+            insuficiência cardíaca e outro com apendicite usando a mesma média
+            esconde os dois casos.</p>
+
+            <p><b>Desvio de permanência.</b> Dias reais menos os dias esperados
+            para aquele CID e faixa etária. É o indicador que aponta o que merece
+            investigação: complicação, infecção, atraso de laudo, pendência social
+            ou falha de fluxo de alta.</p>
+
+            <p><b>Score de risco.</b> Composição ponderada de NEWS2, escala de
+            Braden, escala de Morse, número de comorbidades e faixa etária,
+            normalizada de 0 a 100. As faixas operacionais são ALTO ≥ 70 e
+            MEDIO ≥ 40. O score é triagem e priorização de atenção — não
+            substitui avaliação clínica.</p>
+
+            <p><b>Perfil epidemiológico.</b> Agrupamento por capítulo do CID-10,
+            com contagem e percentual sobre o total de internados no período.
+            Volume não é gravidade: neoplasias costumam consumir mais leitos-dia
+            por caso do que doenças circulatórias, mesmo com menor contagem.</p>
+
+            <p><b>Alertas sonoros.</b> CRÍTICO — três bipes agudos (880 Hz), para
+            alerta crítico de integração, paciente que cruza para risco alto ou
+            desvio acima de +20 dias. ATENÇÃO — dois bipes médios (587 Hz), para
+            sistema degradado, desvio entre +11 e +20 dias ou risco médio.
+            INFORMATIVO — um bipe curto (440 Hz).</p>
+
+            <p style="padding:12px 14px;border:1px solid var(--warn);border-radius:8px;background:rgba(245,165,36,.07);color:var(--warn)">
+              Indicadores de permanência não devem ser usados para avaliação
+              individual de desempenho profissional.</p>
+
+            <p style="color:var(--dim);font-size:12.5px">Nomes de pacientes
+            mascarados (apenas iniciais). Acesso sujeito a auditoria conforme
+            a LGPD.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="foot">
+      <span>bussola prisma · dados de demonstração</span>
+      <span id="ultimaAtualizacao">—</span>
+      <span style="margin-left:auto">Nomes mascarados · auditoria conforme LGPD</span>
+    </footer>
+  </div>
+</div>
+
+<!-- drawer de configuração rápida -->
+<div class="drawer-bg" id="drawerBg"></div>
+<div class="drawer" id="drawer">
+  <button class="icon-btn close" id="drawerClose" aria-label="Fechar">✕</button>
+  <h2>Alertas sonoros</h2>
+  <p style="font-size:12.5px;color:var(--dim);margin:6px 0 16px">
+    Os sons são gerados no navegador por síntese — nenhum arquivo de áudio é baixado.</p>
+  <div class="field" style="margin-bottom:16px">
+    <label>Volume: <b id="volLbl">70</b>%</label>
+    <input type="range" id="volume" min="0" max="100" value="70" style="width:100%">
+  </div>
+  <button class="btn primary" id="testarSom" style="width:100%">Testar som</button>
+</div>
+
+<!-- modal de detalhe -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2 id="modalTitulo">Detalhe</h2>
+    <div id="modalCorpo"></div>
+    <div style="margin-top:16px;text-align:right">
+      <button class="btn" id="modalFechar">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ==========================================================
+   MOTOR DE SOM — Web Audio API, sem arquivos externos
+   ========================================================== */
+const Som = {
+  ctx: null,
+  volume: 0.7,
+  ligado: true,
+
+  iniciar() {
+    if (this.ctx) return true;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    this.ctx = new AC();
+    return true;
+  },
+
+  retomar() {
+    if (this.ctx && this.ctx.state === "suspended") this.ctx.resume();
+  },
+
+  bipe(freq, inicio, dur, tipo = "sine", ganho = 1) {
+    if (!this.ctx || !this.ligado) return;
+    const t0 = this.ctx.currentTime + inicio;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = tipo;
+    osc.frequency.setValueAtTime(freq, t0);
+    // envelope curto evita estalo no início e no fim
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(this.volume * ganho, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(this.ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  },
+
+  critico() {
+    this.retomar();
+    for (let i = 0; i < 3; i++) this.bipe(880, i * 0.17, 0.12, "square", 0.9);
+  },
+
+  atencao() {
+    this.retomar();
+    this.bipe(587, 0, 0.14, "sine", 0.85);
+    this.bipe(587, 0.21, 0.14, "sine", 0.85);
+  },
+
+  informativo() {
+    this.retomar();
+    this.bipe(440, 0, 0.1, "sine", 0.6);
+  },
+
+  testar() {
+    this.critico();
+    setTimeout(() => this.atencao(), 900);
+    setTimeout(() => this.informativo(), 1600);
+  }
+};
+
+/* ==========================================================
+   ESTADO
+   ========================================================== */
+const CFG_KEY = "prisma.config";
+const UI_KEY = "prisma.ui";
+
+const ESTADO = {
+  modulo: "integracoes",
+  modo: { integracoes: "sintetico", pacientes: "sintetico" },
+  dados: { integracoes: null, pacientes: null },
+  alertas: { integracoes: [], pacientes: [] },
+  integracoes: [],
+  pacientes: [],
+  filtrosInt: { busca: "", sistema: "TODOS", status: "TODOS", sort: "horario", dir: "desc" },
+  filtrosPac: { busca: "", unidade: "TODA", risco: "TODOS", situacao: "TODAS", sort: "desvio", dir: "desc" },
+  config: lerConfig(),
+  timerDados: null,
+  timerSim: null
+};
+
+function lerConfig() {
+  try {
+    const c = JSON.parse(localStorage.getItem(CFG_KEY) || "{}");
+    return { baseUrl: c.baseUrl || "", token: c.token || "", intervalo: c.intervalo || 60, demo: c.demo !== false };
+  } catch { return { baseUrl: "", token: "", intervalo: 60, demo: true }; }
+}
+
+function salvarConfig() {
+  localStorage.setItem(CFG_KEY, JSON.stringify(ESTADO.config));
+}
+
+function lerUi() {
+  try { return JSON.parse(localStorage.getItem(UI_KEY) || "{}"); } catch { return {}; }
+}
+function salvarUi() {
+  localStorage.setItem(UI_KEY, JSON.stringify({ modulo: ESTADO.modulo, modo: ESTADO.modo }));
+}
+
+/* ==========================================================
+   UTILITÁRIOS
+   ========================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const num = (v, d = 0) => Number(v ?? 0).toFixed(d).replace(".", ",");
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const agora = () => new Date().toLocaleTimeString("pt-BR", { hour12: false });
+
+function logCfg(msg, erro) {
+  const box = $("#consoleCfg");
+  const linha = document.createElement("div");
+  if (erro) linha.className = "e";
+  linha.textContent = `[${agora()}] ${msg}`;
+  box.appendChild(linha);
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ==========================================================
+   DADOS DE DEMONSTRAÇÃO
+   ========================================================== */
+const SISTEMAS = ["MV Soul", "PACS/RIS", "Oracle", "HL7/FHIR"];
+const UNIDADES = ["CER", "Mariska", "Paulino", "Ambulatório"];
+const TIPOS = ["ADT^A01", "ADT^A03", "ADT^A08", "ORM^O01", "ORU^R01", "SIU^S12", "DICOM C-STORE", "DICOM C-FIND", "FHIR Patient", "FHIR Observation"];
+const INICIAIS = ["M. A. S.", "J. P. L.", "R. C. F.", "A. B. M.", "L. F. T.", "C. S. R.", "P. H. O.", "V. M. G.", "E. R. A.", "T. N. C.", "D. L. P.", "S. B. V."];
+const CIDS = [["I50", "Doenças do aparelho circulatório"], ["J44", "Doenças do aparelho respiratório"], ["K35", "Doenças do aparelho digestivo"], ["E11", "Doenças endócrinas e metabólicas"], ["N39", "Doenças genitourinárias"], ["C50", "Neoplasias"], ["A41", "Doenças infecciosas e parasitárias"]];
+
+let semente = 20261022;
+function rnd() { semente = (semente * 1103515245 + 12345) & 0x7fffffff; return semente / 0x7fffffff; }
+const pick = (a) => a[Math.floor(rnd() * a.length)];
+const entre = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+
+function eventosDemo(qtd = 48) {
+  const out = [];
+  for (let i = 0; i < qtd; i++) {
+    const erro = rnd() < 0.14;
+    const pend = !erro && rnd() < 0.06;
+    const d = new Date(Date.now() - i * entre(3, 22) * 60000);
+    out.push({
+      horario: d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      sistema_origem: pick(SISTEMAS),
+      sistema_destino: rnd() > 0.5 ? "MV Soul" : "PACS/RIS",
+      tipo_mensagem: pick(TIPOS),
+      id_mensagem: "MSG-" + entre(100000, 999999),
+      paciente: pick(INICIAIS),
+      unidade: pick(UNIDADES),
+      status: erro ? "ERRO" : pend ? "PENDENTE" : "SUCESSO",
+      latencia_ms: erro ? entre(1200, 4200) : entre(120, 1500),
+      detalhe: erro ? "Timeout na resposta do destino" : pend ? "Aguardando confirmação ACK" : "ACK recebido"
+    });
+  }
+  return out;
+}
+
+function pacientesDemo(qtd = 52) {
+  const out = [];
+  for (let i = 0; i < qtd; i++) {
+    const [cid, cap] = pick(CIDS);
+    const esperado = entre(3, 9);
+    const desvio = entre(-2, 34);
+    const dias = Math.max(1, esperado + desvio);
+    const score = Math.min(100, Math.max(5, entre(10, 92)));
+    const nivel = score >= 70 ? "ALTO" : score >= 40 ? "MEDIO" : "BAIXO";
+    out.push({
+      prontuario: String(920000 + i * 7),
+      iniciais: pick(INICIAIS),
+      idade: entre(18, 94),
+      sexo: rnd() > 0.46 ? "F" : "M",
+      unidade: pick(UNIDADES),
+      data_internacao: new Date(Date.now() - dias * 864e5).toISOString().slice(0, 10),
+      dias_permanencia: dias,
+      dias_esperados: esperado,
+      desvio,
+      classificacao_desvio: desvio <= 2 ? "DENTRO" : desvio <= 5 ? "LEVE" : desvio <= 10 ? "MODERADO" : desvio <= 20 ? "ALTO" : "CRITICO",
+      cid_principal: cid,
+      capitulo_cid: cap,
+      qtd_comorbidades: entre(0, 5),
+      score_risco: score,
+      nivel_risco: nivel,
+      fatores_risco: `Braden ${entre(10, 20)} · Morse ${entre(15, 65)} · NEWS2 ${entre(0, 8)} · ${entre(1, 4)} comorbidades`,
+      em_curso: rnd() > 0.12 ? "S" : "N"
+    });
+  }
+  return out.sort((a, b) => b.desvio - a.desvio);
+}
+
+function sinteticoIntDemo(linhas) {
+  const hoje = linhas.filter(l => l.status === "SUCESSO").length;
+  const erros = linhas.filter(l => l.status === "ERRO").length;
+  const taxa = linhas.length ? (100 * erros / linhas.length) : 0;
+  const lat = linhas.length ? Math.round(linhas.reduce((s, l) => s + l.latencia_ms, 0) / linhas.length) : 0;
+
+  return {
+    geradoEm: new Date().toISOString(),
+    kpis: [
+      { chave: "disp", rotulo: "Disponibilidade MV Soul", valor: (100 - taxa).toFixed(1), unidade: "%", variacao: 0.2, meta: "99,5%", historico: "98.9,99.1,99.4,99.2,99.6,99.3,99.5,99.1,99.4,99.2,99.6,99.3" },
+      { chave: "lat", rotulo: "Tempo médio de resposta", valor: lat, unidade: "ms", variacao: -4.1, meta: "1.000 ms", historico: "620,580,540,560,510,495,520,480,505,470,490,480" },
+      { chave: "pacs", rotulo: "Estudos PACS hoje", valor: 1284 + hoje, unidade: "", variacao: 6.3, meta: "", historico: "1040,1090,1120,1150,1180,1200,1215,1230,1245,1260,1272,1284" },
+      { chave: "lau", rotulo: "Laudos pendentes no RIS", valor: 37, unidade: "", variacao: -8.0, meta: "< 30", historico: "52,49,47,45,44,42,41,40,39,38,38,37" },
+      { chave: "ses", rotulo: "Sessões ativas Oracle", valor: 148, unidade: "/300", variacao: 3.5, meta: "", historico: "130,134,138,141,139,143,145,142,146,144,147,148" },
+      { chave: "err", rotulo: "Taxa de erro nas integrações", valor: taxa.toFixed(1), unidade: "%", variacao: 1.2, meta: "< 1,0%", historico: "0.6,0.7,0.9,0.8,1.0,0.9,0.7,0.8,0.9,0.8,0.7,0.8" }
+    ],
+    sistemas: [
+      { nome: "MV Soul", status: "OPERACIONAL", descricao: "Sessões ativas 312 · resposta 480 ms · fila 12" },
+      { nome: "PACS/RIS", status: "DEGRADADO", descricao: "7 falhas DICOM em 2h · laudo médio 42 min · storage 84%" },
+      { nome: "Oracle", status: "OPERACIONAL", descricao: "148/300 sessões · tablespace 78% · query média 210 ms" },
+      { nome: "HL7/FHIR", status: "CRITICO", descricao: "Backlog 143 mensagens · 9 em erro · latência 1.850 ms" }
+    ],
+    series: {
+      porHora: ["13h","14h","15h","16h","17h","18h","19h","20h","21h","22h","23h","00h"].map((h, i) => ({
+        hora: h, hl7: [820,910,1040,1180,960,1240,1310,1120,880,760,640,520][i], latencia_ms: [680,720,650,780,610,590,640,700,830,760,690,620][i]
+      })),
+      pacsPorModalidade: [
+        { modalidade: "CR", qtd: 486 }, { modalidade: "CT", qtd: 312 },
+        { modalidade: "MR", qtd: 198 }, { modalidade: "US", qtd: 214 }, { modalidade: "XA", qtd: 74 }
+      ]
+    }
+  };
+}
+
+function sinteticoPacDemo(linhas) {
+  const total = linhas.length;
+  const media = total ? linhas.reduce((s, l) => s + l.dias_permanencia, 0) / total : 0;
+  const esperada = total ? linhas.reduce((s, l) => s + l.dias_esperados, 0) / total : 0;
+  const acima = linhas.filter(l => l.desvio > 2).length;
+
+  const agrupar = (fn) => {
+    const m = new Map();
+    linhas.forEach(l => { const k = fn(l); m.set(k, (m.get(k) || 0) + 1); });
+    return Array.from(m, ([k, v]) => ({ chave: k, qtd: v })).sort((a, b) => b.qtd - a.qtd);
+  };
+
+  const faixas = ["DENTRO", "LEVE", "MODERADO", "ALTO", "CRITICO"].map(f => ({
+    faixa: f, qtd: linhas.filter(l => l.classificacao_desvio === f).length
+  }));
+
+  return {
+    geradoEm: new Date().toISOString(),
+    kpis: {
+      permanencia_media: media.toFixed(1),
+      permanencia_esperada: esperada.toFixed(1),
+      acima_esperado: acima,
+      pct_acima_esperado: total ? (100 * acima / total).toFixed(1) : "0",
+      risco_alto: linhas.filter(l => l.nivel_risco === "ALTO").length,
+      em_curso: linhas.filter(l => l.em_curso === "S").length,
+      score_medio: total ? Math.round(linhas.reduce((s, l) => s + l.score_risco, 0) / total) : 0,
+      total_internados: total
+    },
+    permanencia: { faixasDesvio: faixas },
+    epidemiologia: {
+      porCapituloCid: agrupar(l => l.capitulo_cid).map(o => ({ capitulo: o.chave, qtd: o.qtd })),
+      porFaixaEtaria: ["0-14", "15-29", "30-44", "45-59", "60-74", "75+"].map(f => ({
+        faixa: f, qtd: linhas.filter(l => {
+          const i = l.idade;
+          return f === "0-14" ? i <= 14 : f === "15-29" ? i <= 29 : f === "30-44" ? i <= 44
+            : f === "45-59" ? i <= 59 : f === "60-74" ? i <= 74 : i >= 75;
+        }).length
+      }))
+    },
+    risco: {
+      distribuicao: ["ALTO", "MEDIO", "BAIXO"].map(n => ({ nivel: n, qtd: linhas.filter(l => l.nivel_risco === n).length })),
+      topPacientes: linhas.slice().sort((a, b) => b.score_risco - a.score_risco).slice(0, 8).map(l => ({
+        iniciais: l.iniciais, idade: l.idade, unidade: l.unidade,
+        dias_permanencia: l.dias_permanencia, score_risco: l.score_risco,
+        nivel_risco: l.nivel_risco, fatores_risco: l.fatores_risco, cid_principal: l.cid_principal
+      }))
+    }
+  };
+}
+
+function alertasIntDemo() {
+  return [
+    { id: 1, severidade: "CRITICO", titulo: "Backlog HL7 acima de 100 mensagens", sistema: "HL7/FHIR", horario: agora() },
+    { id: 2, severidade: "ATENCAO", titulo: "Falhas de transferência DICOM (7 em 2h)", sistema: "PACS/RIS", horario: agora() },
+    { id: 3, severidade: "INFO", titulo: "Storage PACS acima de 80%", sistema: "PACS/RIS", horario: agora() }
+  ];
+}
+
+function alertasPacDemo() {
+  return [
+    { id: 1, severidade: "CRITICO", paciente: "R. C. F.", titulo: "Desvio de permanência +34 dias", unidade: "CER", horario: agora() },
+    { id: 2, severidade: "CRITICO", paciente: "M. A. S.", titulo: "Score de risco 88 — reavaliação indicada", unidade: "Mariska", horario: agora() },
+    { id: 3, severidade: "ATENCAO", paciente: "J. P. L.", titulo: "Desvio de permanência +14 dias", unidade: "Paulino", horario: agora() }
+  ];
+}
+
+/* ==========================================================
+   CAMADA DE DADOS
+   ========================================================== */
+async function api(caminho) {
+  const base = ESTADO.config.baseUrl.replace(/\/+$/, "");
+  const r = await fetch(base + caminho, {
+    headers: { Authorization: "Bearer " + ESTADO.config.token },
+    cache: "no-store"
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+function mostrarStatus(tipo, texto) {
+  const dot = $("#statusDot"), t = $("#statusTxt");
+  dot.className = "dot " + (tipo === "ok" ? "ok" : tipo === "err" ? "err" : "");
+  t.textContent = texto;
+}
+
+async function carregarTudo() {
+  const demo = ESTADO.config.demo || !ESTADO.config.baseUrl;
+
+  if (demo) {
+    ESTADO.integracoes = eventosDemo();
+    ESTADO.pacientes = pacientesDemo();
+    mostrarStatus("demo", "Demo (dados de exemplo)");
+  } else {
+    try {
+      const [sintInt, sintPac] = await Promise.all([
+        api("/integracoes/sintetico"),
+        api("/pacientes/sintetico?dias=30")
+      ]);
+      ESTADO.dados.integracoes = sintInt;
+      ESTADO.dados.pacientes = sintPac;
+
+      const [ev, pac] = await Promise.all([
+        api("/integracoes/analitico?page=1&size=200"),
+        api("/pacientes/analitico?page=1&size=200")
+      ]);
+      ESTADO.integracoes = ev.registros || [];
+      ESTADO.pacientes = pac.registros || [];
+
+      mostrarStatus("ok", "Conectado");
+      logCfg("Dados reais carregados com sucesso.");
+    } catch (e) {
+      mostrarStatus("err", "Falha na API");
+      logCfg("Falha ao buscar dados: " + e.message, true);
+      // mantém os últimos dados na tela
+      if (!ESTADO.integracoes.length) {
+        ESTADO.integracoes = eventosDemo();
+        ESTADO.pacientes = pacientesDemo();
+      }
+    }
+  }
+
+  await carregarAlertas();
+  renderizar();
+  $("#ultimaAtualizacao").textContent = "Atualizado às " + agora();
+}
+
+async function carregarAlertas() {
+  const demo = ESTADO.config.demo || !ESTADO.config.baseUrl;
+
+  if (demo) {
+    ESTADO.alertas.integracoes = ESTADO.alertas.integracoes.length ? ESTADO.alertas.integracoes : alertasIntDemo();
+    ESTADO.alertas.pacientes = ESTADO.alertas.pacientes.length ? ESTADO.alertas.pacientes : alertasPacDemo();
+    return;
+  }
+
+  try {
+    const [ai, ap] = await Promise.all([api("/integracoes/alertas"), api("/pacientes/alertas")]);
+    ESTADO.alertas.integracoes = ai.alertas || [];
+    ESTADO.alertas.pacientes = ap.alertas || [];
+  } catch (e) {
+    logCfg("Falha ao buscar alertas: " + e.message, true);
+  }
+}
+
+/* ==========================================================
+   RENDERIZAÇÃO
+   ========================================================== */
+function renderizar() {
+  if (!ESTADO.dados.integracoes) ESTADO.dados.integracoes = sinteticoIntDemo(ESTADO.integracoes);
+  if (!ESTADO.dados.pacientes) ESTADO.dados.pacientes = sinteticoPacDemo(ESTADO.pacientes);
+
+  renderIntSintetico(ESTADO.dados.integracoes);
+  renderIntAnalitico();
+  renderPacSintetico(ESTADO.dados.pacientes);
+  renderPacAnalitico();
+  renderBadges();
+
+  const demon = ESTADO.config.demo || !ESTADO.config.baseUrl;
+  if (demon) {
+    ESTADO.dados.integracoes = sinteticoIntDemo(ESTADO.integracoes);
+    ESTADO.dados.pacientes = sinteticoPacDemo(ESTADO.pacientes);
+    renderIntSintetico(ESTADO.dados.integracoes);
+    renderPacSintetico(ESTADO.dados.pacientes);
+  }
+}
+
+function renderBadges() {
+  const bi = ESTADO.alertas.integracoes.length, bp = ESTADO.alertas.pacientes.length;
+  const nbI = $("#badge-int"), nbP = $("#badge-pac");
+  nbI.textContent = bi; nbI.hidden = !bi;
+  nbP.textContent = bp; nbP.hidden = !bp;
+}
+
+function sparkline(historico) {
+  const vals = String(historico || "").split(",").map(Number).filter(n => !isNaN(n));
+  if (vals.length < 2) return "";
+  const w = 120, h = 26, min = Math.min(...vals), max = Math.max(...vals);
+  const faixa = max - min || 1;
+  const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * w},${h - ((v - min) / faixa) * (h - 6) - 3}`).join(" ");
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polyline points="${pts}" fill="none" stroke="#22d3ee" stroke-width="1.6"/></svg>`;
+}
+
+function kpiCard(k) {
+  const dir = Number(k.variacao) > 0 ? "up" : Number(k.variacao) < 0 ? "down" : "flat";
+  const seta = dir === "up" ? "▲" : dir === "down" ? "▼" : "—";
+  return `<div class="kpi">
+    <div class="lbl">${esc(k.rotulo)}</div>
+    <div class="val">${esc(k.valor)}<small>${esc(k.unidade || "")}</small></div>
+    <div class="delta ${dir}">${seta} ${num(Math.abs(Number(k.variacao) || 0), 1)}% ${k.meta ? "· meta " + esc(k.meta) : ""}</div>
+    ${sparkline(k.historico)}
+  </div>`;
+}
+
+function renderIntSintetico(d) {
+  $("#intKpis").innerHTML = (d.kpis || []).map(k => kpiCard({
+    rotulo: k.rotulo, valor: k.valor, unidade: k.unidade,
+    variacao: k.variacao, meta: k.meta, historico: k.historico
+  })).join("");
+
+  $("#intSistemas").innerHTML = (d.sistemas || []).map(s => {
+    const cls = s.status === "OPERACIONAL" ? "ok" : s.status === "DEGRADADO" ? "warn" : "crit";
+    return `<div class="sys"><span class="lamp ${cls}"></span>
+      <div><h4>${esc(s.nome)}</h4><p>${esc(s.descricao)}</p></div></div>`;
+  }).join("");
+
+  const al = ESTADO.alertas.integracoes;
+  $("#intAlertas").innerHTML = al.length ? al.map(a => `
+    <div class="alert ${a.severidade}">
+      <div><b>${esc(a.titulo)}</b><span>${esc(a.sistema)} · ${esc(a.horario)}</span></div>
+      <button data-reconhecer-int="${a.id}">Reconhecer</button>
+    </div>`).join("") : `<p style="color:var(--dim);font-size:12.5px">Nenhum alerta ativo.</p>`;
+
+  const horas = (d.series && d.series.porHora) || [];
+  $("#intChartHl7").innerHTML = linhaSvg(horas.map(h => h.hora), [horas.map(h => h.hl7)], ["#22d3ee"]);
+  $("#intChartLat").innerHTML = linhaSvg(horas.map(h => h.hora), [horas.map(h => h.latencia_ms)], ["#f5a524"], 1000);
+  $("#intChartPacs").innerHTML = barrasSvg((d.series && d.series.pacsPorModalidade) || [], "modalidade", "qtd");
+}
+
+function renderIntAnalitico() {
+  const f = ESTADO.filtrosInt;
+  let linhas = ESTADO.integracoes.slice();
+
+  if (f.sistema !== "TODOS") linhas = linhas.filter(l => l.sistema_origem === f.sistema);
+  if (f.status !== "TODOS") linhas = linhas.filter(l => l.status === f.status);
+  if (f.busca) {
+    const q = f.busca.toUpperCase();
+    linhas = linhas.filter(l => (l.id_mensagem || "").toUpperCase().includes(q) || (l.paciente || "").toUpperCase().includes(q));
+  }
+
+  const campo = f.sort === "latencia" ? "latencia_ms" : f.sort === "status" ? "status" : "horario";
+  linhas.sort((a, b) => {
+    const va = a[campo], vb = b[campo];
+    const r = typeof va === "number" ? va - vb : String(va).localeCompare(String(vb));
+    return f.dir === "asc" ? r : -r;
+  });
+
+  $("#countInt").textContent = `Exibindo ${linhas.length} de ${ESTADO.integracoes.length} registros`;
+
+  $("#tblInt").querySelector("tbody").innerHTML = linhas.map(l => {
+    const cls = l.status === "ERRO" ? "erro" : "";
+    const latCls = l.latencia_ms > 1000 ? "warn-txt" : "";
+    const chip = l.status === "SUCESSO" ? "ok" : l.status === "ERRO" ? "err" : "warn";
+    return `<tr class="${cls}" data-msg="${esc(l.id_mensagem)}">
+      <td>${esc(l.horario)}</td>
+      <td>${esc(l.sistema_origem)}</td>
+      <td>${esc(l.sistema_destino)}</td>
+      <td>${esc(l.tipo_mensagem)}</td>
+      <td>${esc(l.id_mensagem)}</td>
+      <td>${esc(l.paciente)}</td>
+      <td>${esc(l.unidade)}</td>
+      <td><span class="chip ${chip}">${esc(l.status)}</span></td>
+      <td class="${latCls}">${num(l.latencia_ms)} ms</td>
+      <td>${esc(l.detalhe || "—")}</td>
+    </tr>`;
+  }).join("");
+}
+
+function renderPacSintetico(d) {
+  const k = d.kpis || {};
+  $("#pacKpis").innerHTML = [
+    { rotulo: "Permanência média", valor: num(k.permanencia_media, 1), unidade: "dias", variacao: 2.1, meta: num(k.permanencia_esperada, 1) + " dias" },
+    { rotulo: "Acima do esperado", valor: k.acima_esperado ?? 0, unidade: `de ${k.total_internados ?? 0}`, variacao: 1.4, meta: num(k.pct_acima_esperado, 1) + "%" },
+    { rotulo: "Em curso", valor: k.em_curso ?? 0, unidade: "pacientes", variacao: 0, meta: "" },
+    { rotulo: "Risco alto", valor: k.risco_alto ?? 0, unidade: "pacientes", variacao: -3.2, meta: "" },
+    { rotulo: "Score médio", valor: k.score_medio ?? 0, unidade: "/100", variacao: 0.8, meta: "" }
+  ].map(kpiCard).join("");
+
+  const faixas = (d.permanencia && d.permanencia.faixasDesvio) || [];
+  const rotuloFaixa = { DENTRO: "Dentro do esperado (0 a +2d)", LEVE: "+3 a +5 dias", MODERADO: "+6 a +10 dias", ALTO: "+11 a +20 dias", CRITICO: "Acima de +20 dias" };
+  $("#pacFaixas").innerHTML = barrasSvg(
+    faixas.map(f => ({ nome: rotuloFaixa[f.faixa] || f.faixa, qtd: f.qtd, _cls: f.faixa === "DENTRO" ? "ok" : f.faixa === "LEVE" ? "" : f.faixa === "MODERADO" ? "warn" : "crit" })),
+    "nome", "qtd"
+  );
+
+  const serie = (d.permanencia && d.permanencia.serieMensal) || [];
+  $("#pacSerie").innerHTML = serie.length
+    ? linhaSvg(serie.map(s => s.mes), [serie.map(s => Number(s.observado)), serie.map(s => Number(s.esperado))], ["#22d3ee", "#f5a524"])
+    : `<p style="color:var(--dim);font-size:12.5px">Série indisponível no modo demonstração.</p>`;
+
+  $("#pacCapitulos").innerHTML = barrasSvg((d.epidemiologia && d.epidemiologia.porCapituloCid) || [], "capitulo", "qtd");
+  $("#pacIdades").innerHTML = barrasSvg((d.epidemiologia && d.epidemiologia.porFaixaEtaria) || [], "faixa", "qtd");
+
+  const risco = (d.risco && d.risco.distribuicao) || [];
+  const clsRisco = { ALTO: "crit", MEDIO: "warn", BAIXO: "ok" };
+  $("#pacRisco").innerHTML = barrasSvg(risco.map(r => ({ nome: r.nivel, qtd: r.qtd, _cls: clsRisco[r.nivel] })), "nome", "qtd");
+
+  const top = (d.risco && d.risco.topPacientes) || [];
+  $("#pacTop").innerHTML = top.length ? top.map(p => `
+    <div class="alert ${p.nivel_risco === "ALTO" ? "CRITICO" : p.nivel_risco === "MEDIO" ? "ATENCAO" : "INFO"}">
+      <div><b>${esc(p.iniciais)} · ${esc(p.idade)} anos · ${esc(p.unidade)}</b>
+      <span>${esc(p.dias_permanencia)} dias · score ${esc(p.score_risco)} · ${esc(p.fatores_risco || "")}</span></div>
+    </div>`).join("") : `<p style="color:var(--dim);font-size:12.5px">Sem pacientes em risco no período.</p>`;
+
+  const fatores = [
+    { nome: "Risco de queda", qtd: top.filter(p => /Morse (4[5-9]|[5-9]\d)/.test(p.fatores_risco || "")).length * 3 },
+    { nome: "Lesão por pressão", qtd: top.filter(p => /Braden (1[0-6]|[0-9])\b/.test(p.fatores_risco || "")).length * 2 },
+    { nome: "NEWS2 alterado", qtd: top.filter(p => /NEWS2 ([5-9])/.test(p.fatores_risco || "")).length * 2 },
+    { nome: "Múltiplas comorbidades", qtd: top.length }
+  ];
+  $("#pacFatores").innerHTML = barrasSvg(fatores.map(f => ({ nome: f.nome, qtd: Math.max(f.qtd, 1), _cls: "warn" })), "nome", "qtd");
+}
+
+function renderPacAnalitico() {
+  const f = ESTADO.filtrosPac;
+  let linhas = ESTADO.pacientes.slice();
+
+  if (f.unidade !== "TODA") linhas = linhas.filter(l => l.unidade === f.unidade);
+  if (f.risco !== "TODOS") linhas = linhas.filter(l => l.nivel_risco === f.risco);
+  if (f.situacao === "ACIMA") linhas = linhas.filter(l => l.desvio > 2);
+  if (f.situacao === "DENTRO") linhas = linhas.filter(l => l.desvio <= 2);
+  if (f.busca) {
+    const q = f.busca.toUpperCase();
+    linhas = linhas.filter(l =>
+      (l.iniciais || "").toUpperCase().includes(q) ||
+      (l.prontuario || "").includes(q) ||
+      (l.cid_principal || "").toUpperCase().includes(q));
+  }
+
+  linhas.sort((a, b) => {
+    const va = a[f.sort], vb = b[f.sort];
+    const r = typeof va === "number" ? va - vb : String(va).localeCompare(String(vb));
+    return f.dir === "asc" ? r : -r;
+  });
+
+  $("#countPac").textContent = `Exibindo ${linhas.length} de ${ESTADO.pacientes.length} pacientes`;
+
+  $("#tblPac").querySelector("tbody").innerHTML = linhas.map(l => {
+    const cls = l.nivel_risco === "ALTO" ? "alto" : "";
+    const devCls = l.desvio > 10 ? "warn-txt" : l.desvio > 2 ? "" : "";
+    const chip = l.nivel_risco === "ALTO" ? "err" : l.nivel_risco === "MEDIO" ? "warn" : "ok";
+    return `<tr class="${cls}" data-pront="${esc(l.prontuario)}">
+      <td>${esc(l.prontuario)}</td>
+      <td>${esc(l.iniciais)}</td>
+      <td>${esc(l.idade)}</td>
+      <td>${esc(l.sexo)}</td>
+      <td>${esc(l.unidade)}</td>
+      <td>${esc(l.data_internacao)}</td>
+      <td>${esc(l.dias_permanencia)}</td>
+      <td>${esc(l.dias_esperados)}</td>
+      <td class="${devCls}">${Number(l.desvio) > 0 ? "+" : ""}${esc(l.desvio)}</td>
+      <td>${esc(l.cid_principal)}</td>
+      <td>${esc((l.capitulo_cid || "").slice(0, 28))}</td>
+      <td>${esc(l.qtd_comorbidades)}</td>
+      <td class="${Number(l.score_risco) >= 70 ? "crit-txt" : ""}">${esc(l.score_risco)}</td>
+      <td><span class="chip ${chip}">${esc(l.nivel_risco)}</span></td>
+    </tr>`;
+  }).join("");
+}
+
+/* ---------------- gráficos em SVG ---------------- */
+function linhaSvg(rotulos, series, cores, meta) {
+  const w = 560, h = 170, pl = 34, pr = 10, pt = 12, pb = 24;
+  const todos = series.flat().filter(n => !isNaN(n));
+  if (!todos.length) return `<p style="color:var(--dim);font-size:12.5px">Sem dados.</p>`;
+  const max = Math.max(...todos, meta || 0) * 1.12 || 1;
+  const min = 0;
+  const x = i => pl + (i / Math.max(rotulos.length - 1, 1)) * (w - pl - pr);
+  const y = v => h - pb - ((v - min) / (max - min)) * (h - pt - pb);
+
+  let out = `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">`;
+  for (let g = 0; g <= 3; g++) {
+    const yy = pt + (g / 3) * (h - pt - pb);
+    out += `<line x1="${pl}" y1="${yy}" x2="${w - pr}" y2="${yy}" stroke="#26303d" stroke-width="1"/>`;
+  }
+  if (meta) {
+    out += `<line x1="${pl}" y1="${y(meta)}" x2="${w - pr}" y2="${y(meta)}" stroke="#f5a524" stroke-dasharray="4 4" stroke-width="1"/>`;
+  }
+  series.forEach((s, si) => {
+    const pts = s.map((v, i) => `${x(i)},${y(Number(v))}`).join(" ");
+    out += `<polyline points="${pts}" fill="none" stroke="${cores[si]}" stroke-width="2" stroke-linejoin="round"/>`;
+    s.forEach((v, i) => { out += `<circle cx="${x(i)}" cy="${y(Number(v))}" r="2.4" fill="${cores[si]}"/>`; });
+  });
+  rotulos.forEach((r, i) => {
+    if (i % Math.ceil(rotulos.length / 7) !== 0) return;
+    out += `<text x="${x(i)}" y="${h - 6}" font-size="9" fill="#8fa0b5" text-anchor="middle">${esc(r)}</text>`;
+  });
+  return out + "</svg>";
+}
+
+function barrasSvg(itens, campoNome, campoValor) {
+  if (!itens.length) return `<p style="color:var(--dim);font-size:12.5px">Sem dados.</p>`;
+  const max = Math.max(...itens.map(i => Number(i[campoValor]) || 0)) || 1;
+  return `<div class="bars">` + itens.map(i => {
+    const v = Number(i[campoValor]) || 0;
+    const pct = Math.max(2, (v / max) * 100);
+    const cls = i._cls || "";
+    return `<div class="bar-row">
+      <span class="name">${esc(i[campoNome])}</span>
+      <span class="num">${num(v)}</span>
+      <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("") + "</div>";
+}
+
+/* ==========================================================
+   AÇÕES / EVENTOS
+   ========================================================== */
+const TITULOS = {
+  integracoes: ["Integrações e Sistemas Hospitalares", "MV Soul · PACS/RIS · Oracle · HL7/FHIR"],
+  pacientes: ["Análise de Pacientes", "Permanência ajustada · Perfil epidemiológico · Risco clínico"],
+  config: ["Configurações", "Conexão com a API intermediária"],
+  metodologia: ["Metodologia", "Como cada indicador é calculado"]
+};
+
+function trocarSecao(sec) {
+  ESTADO.modulo = sec;
+  $$(".nav-item").forEach(b => b.classList.toggle("active", b.dataset.sec === sec));
+  ["integracoes", "pacientes", "config", "metodologia"].forEach(s => {
+    $("#sec-" + s).hidden = s !== sec;
+  });
+  $("#titulo").textContent = TITULOS[sec][0];
+  $("#subtitulo").textContent = TITULOS[sec][1];
+  $("#sidebar").classList.remove("open");
+  salvarUi();
+}
+
+function trocarModo(mod, modo) {
+  ESTADO.modo[mod] = modo;
+  $$(`.tabs[data-mod="${mod}"] .tab`).forEach(t => t.classList.toggle("active", t.dataset.mode === modo));
+  if (mod === "integracoes") {
+    $("#int-sintetico").hidden = modo !== "sintetico";
+    $("#int-analitico").hidden = modo !== "analitico";
+  } else {
+    $("#pac-sintetico").hidden = modo !== "sintetico";
+    $("#pac-analitico").hidden = modo !== "analitico";
+  }
+  salvarUi();
+}
+
+function reconhecerAlertaInt(id) {
+  ESTADO.alertas.integracoes = ESTADO.alertas.integracoes.filter(a => String(a.id) !== String(id));
+  renderIntSintetico(ESTADO.dados.integracoes);
+  renderBadges();
+
+  if (!ESTADO.config.demo && ESTADO.config.baseUrl) {
+    fetch(ESTADO.config.baseUrl.replace(/\/+$/, "") + `/integracoes/alertas/${id}/reconhecer`, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + ESTADO.config.token }
+    }).catch(e => logCfg("Falha ao reconhecer alerta: " + e.message, true));
+  }
+}
+
+function toCsv(linhas, colunas) {
+  const cab = colunas.join(";");
+  const corpo = linhas.map(l => colunas.map(c => {
+    const v = l[c] ?? "";
+    return typeof v === "string" && v.includes(";") ? `"${v}"` : v;
+  }).join(";"));
+  return "\ufeff" + [cab, ...corpo].join("\r\n");
+}
+
+function baixar(nome, conteudo, tipo = "text/csv;charset=utf-8") {
+  const blob = new Blob([conteudo], { type: tipo });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nome;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function abrirModal(titulo, html) {
+  $("#modalTitulo").textContent = titulo;
+  $("#modalCorpo").innerHTML = html;
+  $("#modalBg").classList.add("open");
+}
+
+async function detalheEvento(idMsg) {
+  const local = ESTADO.integracoes.find(l => l.id_mensagem === idMsg);
+  if (ESTADO.config.demo || !ESTADO.config.baseUrl) {
+    abrirModal("Mensagem " + idMsg, `<pre>${esc(JSON.stringify({
+      idMensagem: idMsg,
+      tipo: local ? local.tipo_mensagem : "ADT^A01",
+      origem: local ? local.sistema_origem : "MV Soul",
+      destino: local ? local.sistema_destino : "PACS/RIS",
+      status: local ? local.status : "SUCESSO",
+      latenciaMs: local ? local.latencia_ms : 480,
+      payload: { MSH: { sendingApplication: "MVSOUL", messageType: "ADT^A01", controlId: idMsg },
+                 PID: { patientId: "******", nameMasked: "M. A. S.", unit: "CER" } }
+    }, null, 2))}</pre>`);
+    return;
+  }
+  try {
+    const d = await api("/integracoes/eventos/" + encodeURIComponent(idMsg));
+    abrirModal("Mensagem " + idMsg, `<pre>${esc(JSON.stringify(d, null, 2))}</pre>`);
+  } catch (e) {
+    abrirModal("Mensagem " + idMsg, `<p style="color:var(--crit)">Falha ao carregar payload: ${esc(e.message)}</p>`);
+  }
+}
+
+function detalhePaciente(pront) {
+  const p = ESTADO.pacientes.find(l => String(l.prontuario) === String(pront));
+  if (!p) return;
+  const risco = p.nivel_risco === "ALTO" ? "var(--crit)" : p.nivel_risco === "MEDIO" ? "var(--warn)" : "var(--ok)";
+  abrirModal("Internação · " + p.iniciais, `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">
+      <div><div style="font-size:11px;color:var(--dim)">PRONTUÁRIO</div><div>${esc(p.prontuario)}</div></div>
+      <div><div style="font-size:11px;color:var(--dim)">IDADE / SEXO</div><div>${esc(p.idade)} · ${esc(p.sexo)}</div></div>
+      <div><div style="font-size:11px;color:var(--dim)">UNIDADE</div><div>${esc(p.unidade)}</div></div>
+      <div><div style="font-size:11px;color:var(--dim)">CID PRINCIPAL</div><div>${esc(p.cid_principal)}</div></div>
+      <div><div style="font-size:11px;color:var(--dim)">PERMANÊNCIA</div><div>${esc(p.dias_permanencia)} dias (esperado ${esc(p.dias_esperados)})</div></div>
+      <div><div style="font-size:11px;color:var(--dim)">DESVIO</div><div style="color:${p.desvio > 10 ? "var(--warn)" : "inherit"}">${p.desvio > 0 ? "+" : ""}${esc(p.desvio)} dias</div></div>
+    </div>
+    <h3 style="font-size:12px;text-transform:uppercase;color:var(--dim);margin:16px 0 8px">Composição do score de risco</h3>
+    <div class="bars">
+      <div class="bar-row"><span class="name">Score total</span><span class="num" style="color:${risco}">${esc(p.score_risco)}/100</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${p.score_risco}%;background:${risco}"></div></div></div>
+    </div>
+    <p style="font-size:12.5px;color:var(--dim);margin-top:10px">${esc(p.fatores_risco || "")}</p>
+    <h3 style="font-size:12px;text-transform:uppercase;color:var(--dim);margin:16px 0 8px">Sugestões de revisão</h3>
+    <ul style="font-size:13px;line-height:1.8;padding-left:18px">
+      <li>Revisar plano terapêutico — desvio de ${p.desvio > 0 ? "+" : ""}${esc(p.desvio)} dias</li>
+      <li>Avaliar critérios de alta hospitalar com a equipe assistencial</li>
+      <li>Solicitar avaliação da infectologia se houver sinal de infecção</li>
+    </ul>`);
+}
+
+/* ==========================================================
+   SIMULAÇÃO EM TEMPO REAL (modo demo)
+   ========================================================== */
+function simular() {
+  if (!(ESTADO.config.demo || !ESTADO.config.baseUrl)) return;
+
+  // novo evento de integração a cada ciclo
+  if (Math.random() < 0.85) {
+    const novo = eventosDemo(1)[0];
+    novo.horario = new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    ESTADO.integracoes.unshift(novo);
+    if (ESTADO.integracoes.length > 220) ESTADO.integracoes.pop();
+  }
+
+  // altera o desvio de um paciente
+  if (ESTADO.pacientes.length && Math.random() < 0.5) {
+    const alvo = ESTADO.pacientes[Math.floor(Math.random() * ESTADO.pacientes.length)];
+    alvo.desvio = Math.min(40, alvo.desvio + (Math.random() < 0.7 ? 1 : -1));
+    alvo.dias_permanencia = Math.max(1, alvo.dias_esperados + alvo.desvio);
+  }
+
+  renderizar();
+
+  // alerta novo a cada ~45 s
+  if (Math.random() < 0.32) {
+    const critico = Math.random() < 0.4;
+    const mod = Math.random() < 0.5 ? "integracoes" : "pacientes";
+    const alvo = mod === "integracoes" ? ESTADO.alertas.integracoes : ESTADO.alertas.pacientes;
+
+    alvo.unshift({
+      id: Date.now(),
+      severidade: critico ? "CRITICO" : "ATENCAO",
+      titulo: mod === "integracoes"
+        ? (critico ? "Backlog HL7 acima do limite" : "Latência elevada no barramento")
+        : (critico ? "Paciente cruzou para risco alto" : "Desvio de permanência em atenção"),
+      sistema: mod === "integracoes" ? "HL7/FHIR" : undefined,
+      paciente: mod === "pacientes" ? pick(INICIAIS) : undefined,
+      unidade: mod === "pacientes" ? pick(UNIDADES) : undefined,
+      horario: agora()
+    });
+
+    renderizar();
+    dispararSom(critico);
+  }
+}
+
+function dispararSom(critico) {
+  if (!Som.ligado) return;
+  if (critico) {
+    Som.critico();
+    const b = $("#banner");
+    $("#bannerTxt").textContent = "ALERTA CRÍTICO — verifique os painéis de operação";
+    b.classList.add("show");
+    setTimeout(() => b.classList.remove("show"), 9000);
+  } else {
+    Som.atencao();
+  }
+}
+
+/* ==========================================================
+   LIGAÇÕES DE EVENTOS
+   ========================================================== */
+function iniciar() {
+  // relógio
+  setInterval(() => { $("#relogio").textContent = agora(); }, 1000);
+  $("#relogio").textContent = agora();
+
+  // áudio: navegadores exigem interação antes de tocar som
+  const desbloquear = () => {
+    if (Som.iniciar()) {
+      Som.retomar();
+      $("#audioHint").hidden = true;
+      document.removeEventListener("click", desbloquear);
+      document.removeEventListener("keydown", desbloquear);
+    }
+  };
+  document.addEventListener("click", desbloquear);
+  document.addEventListener("keydown", desbloquear);
+
+  // navegação
+  $$(".nav-item").forEach(b => b.addEventListener("click", () => trocarSecao(b.dataset.sec)));
+  $("#menuBtn").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
+
+  // abas
+  $$(".tabs").forEach(t => {
+    t.querySelectorAll(".tab").forEach(b => {
+      b.addEventListener("click", () => trocarModo(t.dataset.mod, b.dataset.mode));
+    });
+  });
+
+  // som
+  $("#cfgBtn").addEventListener("click", () => {
+    $("#drawerBg").classList.add("open");
+    $("#drawer").classList.add("open");
+  });
+  $("#drawerClose").addEventListener("click", fecharDrawer);
+  $("#drawerBg").addEventListener("click", fecharDrawer);
+
+  $("#somBtn").addEventListener("click", () => {
+    Som.ligado = !Som.ligado;
+    $("#somBtn").classList.toggle("on", Som.ligado);
+    if (Som.ligado) { Som.iniciar(); Som.informativo(); }
+  });
+
+  $("#volume").addEventListener("input", (e) => {
+    Som.volume = Number(e.target.value) / 100;
+    $("#volLbl").textContent = e.target.value;
+  });
+
+  $("#testarSom").addEventListener("click", () => { Som.iniciar(); Som.testar(); });
+
+  // filtros integrações
+  $("#fBuscaInt").addEventListener("input", e => { ESTADO.filtrosInt.busca = e.target.value; renderIntAnalitico(); });
+  $("#fSistemaInt").addEventListener("change", e => { ESTADO.filtrosInt.sistema = e.target.value; renderIntAnalitico(); });
+  $("#fStatusInt").addEventListener("change", e => { ESTADO.filtrosInt.status = e.target.value; renderIntAnalitico(); });
+  $("#limparInt").addEventListener("click", () => {
+    ESTADO.filtrosInt = { busca: "", sistema: "TODOS", status: "TODOS", sort: "horario", dir: "desc" };
+    $("#fBuscaInt").value = ""; $("#fSistemaInt").value = "TODOS"; $("#fStatusInt").value = "TODOS";
+    renderIntAnalitico();
+  });
+  $("#csvInt").addEventListener("click", () => {
+    baixar("integracoes.csv", toCsv(ESTADO.integracoes, ["horario","sistema_origem","sistema_destino","tipo_mensagem","id_mensagem","paciente","unidade","status","latencia_ms","detalhe"]));
+  });
+
+  // filtros pacientes
+  $("#fBuscaPac").addEventListener("input", e => { ESTADO.filtrosPac.busca = e.target.value; renderPacAnalitico(); });
+  $("#fUnidadePac").addEventListener("change", e => { ESTADO.filtrosPac.unidade = e.target.value; renderPacAnalitico(); });
+  $("#fRiscoPac").addEventListener("change", e => { ESTADO.filtrosPac.risco = e.target.value; renderPacAnalitico(); });
+  $("#fSitPac").addEventListener("change", e => { ESTADO.filtrosPac.situacao = e.target.value; renderPacAnalitico(); });
+  $("#limparPac").addEventListener("click", () => {
+    ESTADO.filtrosPac = { busca: "", unidade: "TODA", risco: "TODOS", situacao: "TODAS", sort: "desvio", dir: "desc" };
+    $("#fBuscaPac").value = ""; $("#fUnidadePac").value = "TODA"; $("#fRiscoPac").value = "TODOS"; $("#fSitPac").value = "TODAS";
+    renderPacAnalitico();
+  });
+  $("#csvPac").addEventListener("click", () => {
+    baixar("pacientes.csv", toCsv(ESTADO.pacientes, ["prontuario","iniciais","idade","sexo","unidade","data_internacao","dias_permanencia","dias_esperados","desvio","cid_principal","capitulo_cid","qtd_comorbidades","score_risco","nivel_risco"]));
+  });
+
+  // ordenação
+  $$("#tblInt thead th.sortable").forEach(th => th.addEventListener("click", () => {
+    const s = th.dataset.sort;
+    ESTADO.filtrosInt.dir = ESTADO.filtrosInt.sort === s && ESTADO.filtrosInt.dir === "desc" ? "asc" : "desc";
+    ESTADO.filtrosInt.sort = s;
+    renderIntAnalitico();
+  }));
+  $$("#tblPac thead th.sortable").forEach(th => th.addEventListener("click", () => {
+    const s = th.dataset.sort;
+    ESTADO.filtrosPac.dir = ESTADO.filtrosPac.sort === s && ESTADO.filtrosPac.dir === "desc" ? "asc" : "desc";
+    ESTADO.filtrosPac.sort = s;
+    renderPacAnalitico();
+  }));
+
+  // cliques na tabela
+  $("#tblInt").addEventListener("click", e => {
+    const tr = e.target.closest("tr[data-msg]");
+    if (tr) detalheEvento(tr.dataset.msg);
+  });
+  $("#tblPac").addEventListener("click", e => {
+    const tr = e.target.closest("tr[data-pront]");
+    if (tr) detalhePaciente(tr.dataset.pront);
+  });
+
+  // reconhecer alerta (delegação)
+  document.addEventListener("click", e => {
+    const btn = e.target.closest("[data-reconhecer-int]");
+    if (btn) reconhecerAlertaInt(btn.dataset.reconhecerInt);
+  });
+
+  // modal
+  $("#modalFechar").addEventListener("click", () => $("#modalBg").classList.remove("open"));
+  $("#modalBg").addEventListener("click", e => { if (e.target.id === "modalBg") $("#modalBg").classList.remove("open"); });
+
+  // configuração
+  $("#cBase").value = ESTADO.config.baseUrl;
+  $("#cToken").value = ESTADO.config.token;
+  $("#cInt").value = ESTADO.config.intervalo;
+
+  $("#salvarCfg").addEventListener("click", () => {
+    ESTADO.config.baseUrl = $("#cBase").value.trim();
+    ESTADO.config.token = $("#cToken").value.trim();
+    ESTADO.config.intervalo = Math.max(10, Number($("#cInt").value) || 60);
+    ESTADO.config.demo = !ESTADO.config.baseUrl;
+    salvarConfig();
+    logCfg(ESTADO.config.demo ? "Modo demonstração ativo." : "Configuração salva. Buscando dados reais…");
+    reiniciarPolling();
+    carregarTudo();
+  });
+
+  $("#testarApi").addEventListener("click", async () => {
+    const base = $("#cBase").value.trim().replace(/\/+$/, "");
+    if (!base) return logCfg("Informe a URL base da API.", true);
+    logCfg("Testando " + base + "/health …");
+    try {
+      const r = await fetch(base + "/health", { headers: { Authorization: "Bearer " + $("#cToken").value.trim() } });
+      if (r.ok) { const j = await r.json(); logCfg("Conexão OK — oracle=" + j.oracle); }
+      else logCfg("Resposta HTTP " + r.status, true);
+    } catch (e) { logCfg("Falha: " + e.message + " (verifique URL, rede e CORS)", true); }
+  });
+
+  $("#voltarDemo").addEventListener("click", () => {
+    ESTADO.config = { baseUrl: "", token: "", intervalo: 60, demo: true };
+    salvarConfig();
+    $("#cBase").value = ""; $("#cToken").value = "";
+    logCfg("Voltando para dados de demonstração.");
+    reiniciarPolling();
+    carregarTudo();
+  });
+
+  // restaurar UI
+  const ui = lerUi();
+  if (ui.modo) ESTADO.modo = Object.assign(ESTADO.modo, ui.modo);
+  trocarModo("integracoes", ESTADO.modo.integracoes);
+  trocarModo("pacientes", ESTADO.modo.pacientes);
+  trocarSecao(ui.modulo || "integracoes");
+
+  carregarTudo();
+  reiniciarPolling();
+
+  Som.volume = 0.7;
+}
+
+function fecharDrawer() {
+  $("#drawerBg").classList.remove("open");
+  $("#drawer").classList.remove("open");
+}
+
+function reiniciarPolling() {
+  clearInterval(ESTADO.timerDados);
+  clearInterval(ESTADO.timerSim);
+  ESTADO.timerDados = setInterval(carregarTudo, ESTADO.config.intervalo * 1000);
+  ESTADO.timerSim = setInterval(simular, 11000);
+}
+
+document.addEventListener("DOMContentLoaded", iniciar);
+</script>
+</body>
+</html>

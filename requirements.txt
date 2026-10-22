@@ -1,0 +1,7 @@
+# Aplicação
+fastapi>=0.115,<0.120
+uvicorn[standard]>=0.32,<0.40
+pydantic-settings>=2.6,<3.0
+
+# Oracle — modo Thin embutido, sem Instant Client
+python-oracledb>=2.5,<3.0
